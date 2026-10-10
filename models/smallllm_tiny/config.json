@@ -1,0 +1,21 @@
+{
+  "vocab_size": 1024,
+  "embedding_dim": 32,
+  "hidden_dim": 64,
+  "num_layers": 2,
+  "num_heads": 2,
+  "max_seq_len": 64,
+  "dropout": 0.1,
+  "learning_rate": 0.0001,
+  "batch_size": 4,
+  "use_8bit": false,
+  "lazy_load": false,
+  "cache_dir": ".smallllm_cache",
+  "temperature": 0.7,
+  "top_k": 50,
+  "max_new_tokens": 50,
+  "pad_token": "<PAD>",
+  "unk_token": "<UNK>",
+  "sos_token": "<SOS>",
+  "eos_token": "<EOS>"
+}
