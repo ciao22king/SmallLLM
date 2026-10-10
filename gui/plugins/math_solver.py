@@ -23,7 +23,7 @@ class MathSolverPlugin(BasePlugin):
         super().__init__(**config)
         self.display_name = "Math Solver"
         self.description = "Solve mathematical problems and perform calculations"
-        self.icon = "\u2795"
+        self.icon = "➕"
         self.version = "1.0"
         self.author = "SmallLLM"
     
@@ -234,19 +234,19 @@ class MathSolverPlugin(BasePlugin):
                 "name": "calculate",
                 "display_name": "Calculate",
                 "description": "Calculate a mathematical expression",
-                "icon": "\u2795"
+                "icon": "➕"
             },
             {
                 "name": "solve_equation",
                 "display_name": "Solve Equation",
                 "description": "Solve an equation for a variable",
-                "icon": "\u2260"
+                "icon": "≠"
             },
             {
                 "name": "simplify",
                 "display_name": "Simplify Expression",
                 "description": "Simplify a mathematical expression",
-                "icon": "\u27f7"
+                "icon": "⟷"
             },
             {
                 "name": "plot",

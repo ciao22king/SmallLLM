@@ -133,7 +133,7 @@ class ChatMessageWidget(QWidget):
         self.avatar.setAlignment(Qt.AlignmentFlag.AlignCenter)
         
         if sender == "user":
-            self.avatar.setText("\u0001F464")
+            self.avatar.setText("F464")
             self.setStyleSheet("""
                 background: #6366f1;
                 color: white;
@@ -141,7 +141,7 @@ class ChatMessageWidget(QWidget):
                 padding: 8px;
             """)
         else:
-            self.avatar.setText("\u0001F916")
+            self.avatar.setText("F916")
             self.setStyleSheet("""
                 background: #444654;
                 color: white;
@@ -454,7 +454,7 @@ class PluginPanel(QWidget):
                                    self.on_plugin_toggled(name, checked))
         
         # Configure button
-        config_btn = QPushButton("\u0001F52C")
+        config_btn = QPushButton("F52C")
         config_btn.setStyleSheet("background: #444654; color: white;")
         config_btn.clicked.connect(lambda: self.configure_plugin(plugin_spec.name))
         
@@ -530,7 +530,7 @@ class MainWindow(QMainWindow):
         sidebar_layout.setSpacing(0)
         
         # New chat button
-        new_chat_btn = QPushButton("\u0001F4AC New Chat")
+        new_chat_btn = QPushButton("F4AC New Chat")
         new_chat_btn.setStyleSheet("""
             QPushButton {
                 background: #444654;
@@ -555,7 +555,7 @@ class MainWindow(QMainWindow):
         sidebar_layout.addWidget(history_label)
         
         # Plugin menu button
-        plugin_btn = QPushButton("\u0001F916 Plugins")
+        plugin_btn = QPushButton("F916 Plugins")
         plugin_btn.setStyleSheet("""
             QPushButton {
                 background: #444654;
@@ -675,7 +675,7 @@ class MainWindow(QMainWindow):
         self.input_field.setFont(QFont("Segoe UI", 10))
         self.input_field.returnPressed.connect(self.send_message)
         
-        self.send_btn = QPushButton("\u0001F300")
+        self.send_btn = QPushButton("F300")
         self.send_btn.setStyleSheet("""
             QPushButton { 
                 background: #6366f1; 
@@ -699,7 +699,7 @@ class MainWindow(QMainWindow):
         layout.addWidget(input_widget)
         
         chat_tab.setLayout(layout)
-        self.tab_widget.addTab(chat_tab, "\u0001F4AC Chat")
+        self.tab_widget.addTab(chat_tab, "F4AC Chat")
         
         # Add welcome message
         self.chat_widget.add_message(
@@ -724,7 +724,7 @@ class MainWindow(QMainWindow):
         layout.addWidget(self.settings_widget)
         
         settings_tab.setLayout(layout)
-        self.tab_widget.addTab(settings_tab, "\u0001F52C Settings")
+        self.tab_widget.addTab(settings_tab, "F52C Settings")
         
         # Connect buttons
         self.settings_widget.load_btn.clicked.connect(self.load_model_from_settings)
@@ -779,7 +779,7 @@ class MainWindow(QMainWindow):
         layout.addWidget(memory_group)
         
         info_tab.setLayout(layout)
-        self.tab_widget.addTab(info_tab, "\u0001F19D Info")
+        self.tab_widget.addTab(info_tab, "F19D Info")
     
     def create_plugin_tab(self):
         """Create the plugin management tab."""
@@ -795,7 +795,7 @@ class MainWindow(QMainWindow):
         layout.addWidget(self.plugin_panel)
         
         plugin_tab.setLayout(layout)
-        self.tab_widget.addTab(plugin_tab, "\u0001F916 Plugins")
+        self.tab_widget.addTab(plugin_tab, "F916 Plugins")
     
     def connect_signals(self):
         """Connect all signals."""
@@ -814,7 +814,7 @@ class MainWindow(QMainWindow):
         """Show the plugin panel."""
         # Switch to plugin tab
         for i in range(self.tab_widget.count()):
-            if self.tab_widget.tabText(i) == "\u0001F916 Plugins":
+            if self.tab_widget.tabText(i) == "F916 Plugins":
                 self.tab_widget.setCurrentIndex(i)
                 break
     
