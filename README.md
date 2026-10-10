@@ -1,3 +1,5 @@
+MADE WITH HELP OF MISTRAL VIBE 
+
 # SmallLLM
 
 **A Tiny AI That Runs on 2011-Era PCs**
