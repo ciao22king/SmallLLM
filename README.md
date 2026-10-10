@@ -256,6 +256,104 @@ token_ids = tokenizer.encode("Hello world")
 text = tokenizer.decode(token_ids)
 ```
 
+## REST API
+
+SmallLLM includes a REST API that can be used with services like **Byok** and other AI platforms.
+
+### Starting the API Server
+
+```bash
+# Start the API server
+python -m smallllm.api
+
+# Or use the entry point
+smallllm-api
+
+# With custom host and port
+python -m smallllm.api --host 0.0.0.0 --port 8000
+```
+
+### API Endpoints
+
+#### Standard Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/` | API information |
+| GET | `/api/health` | Health check |
+| GET | `/api/info` | Model information |
+| GET | `/api/models` | List available models |
+| GET | `/api/memory` | Memory usage |
+| POST | `/api/generate` | Generate text |
+| POST | `/api/chat` | Chat with AI |
+| POST | `/api/tokenize` | Tokenize text |
+| POST | `/api/detokenize` | Detokenize text |
+| POST | `/api/batch-generate` | Batch generation |
+| POST | `/api/stream-generate` | Streaming generation |
+
+#### Byok-Compatible Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/v1/chat/completions` | Chat completions (Byok style) |
+| POST | `/v1/completions` | Completions (Byok style) |
+| GET | `/v1/models` | List models (Byok style) |
+| GET | `/v1/models/<name>` | Model info (Byok style) |
+
+### Using the API with Byok
+
+You can use SmallLLM API with **Byok** by configuring it to point to your SmallLLM API server:
+
+1. Start SmallLLM API:
+   ```bash
+   python -m smallllm.api --host 0.0.0.0 --port 5000
+   ```
+
+2. In Byok, add a custom model with URL: `http://localhost:5000/v1`
+
+3. Use model names: `smallllm:tiny`, `smallllm:small`, or `smallllm:medium`
+
+### Example API Requests
+
+#### Generate Text
+
+```bash
+curl -X POST http://localhost:5000/api/generate \
+  -H "Content-Type: application/json" \
+  -d '{"prompt": "Hello world", "max_tokens": 20, "temperature": 0.7}'
+```
+
+#### Chat
+
+```bash
+curl -X POST http://localhost:5000/api/chat \
+  -H "Content-Type: application/json" \
+  -d '{"prompt": "What is the meaning of life?", "max_tokens": 50}'
+```
+
+#### Byok-Style Request
+
+```bash
+curl -X POST http://localhost:5000/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{"model": "smallllm:small", "messages": [{"role": "user", "content": "Hello!"}], "max_tokens": 50}'
+```
+
+### Python API Client Example
+
+See `api_example.py` for a complete example of using the API from Python.
+
+### API Authentication (Optional)
+
+By default, the API has no authentication. For production use, you should:
+
+1. Run behind a reverse proxy (Nginx, Apache)
+2. Add authentication middleware
+3. Use HTTPS
+4. Rate limiting
+
+For simple API key authentication, you can modify the API code to check for an `X-API-Key` header.
+
 ## Memory Optimization
 
 SmallLLM implements several memory optimization techniques:

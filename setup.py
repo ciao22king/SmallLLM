@@ -40,10 +40,12 @@ setup(
     python_requires=">=3.6",
     install_requires=[
         "numpy>=1.16.0",
+        "Flask>=2.0.0",
     ],
     entry_points={
         "console_scripts": [
             "smallllm=smallllm.cli:main",
+            "smallllm-api=smallllm.api:run_api",
         ],
     },
     project_urls={

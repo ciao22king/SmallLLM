@@ -4,6 +4,9 @@
 # Core dependencies
 numpy>=1.16.0
 
+# For API server
+Flask>=2.0.0
+
 # Optional: For better performance on newer systems
 # numpy>=1.21.0
 

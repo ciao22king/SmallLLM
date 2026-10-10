@@ -9,5 +9,6 @@ from .tokenizer import Tokenizer
 from .model import SmallLLM
 from .config import ModelConfig
 from .cli import CLI
+from .api import app, run_api
 
-__all__ = ["Tokenizer", "SmallLLM", "ModelConfig", "CLI"]
+__all__ = ["Tokenizer", "SmallLLM", "ModelConfig", "CLI", "app", "run_api"]
