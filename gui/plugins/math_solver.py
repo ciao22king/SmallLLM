@@ -252,8 +252,7 @@ class MathSolverPlugin(BasePlugin):
                 "name": "plot",
                 "display_name": "Plot Function",
                 "description": "Plot a mathematical function (requires matplotlib)",
-                "icon": "\ud83d
-udcb"
+                "icon": "📊"
             }
         ]
     
