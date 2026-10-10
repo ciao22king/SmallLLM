@@ -420,6 +420,7 @@ class SmallLLM:
         # Model components (lazy-loaded)
         self.embedding: Optional[np.ndarray] = None
         self.position_embedding: Optional[np.ndarray] = None
+        self.embedding_proj: Optional[Linear] = None
         self.layers: List[Optional[TransformerBlock]] = [None] * self.config.num_layers
         self.final_norm: Optional[LayerNorm] = None
         self.lm_head: Optional[Linear] = None
@@ -452,10 +453,9 @@ class SmallLLM:
         self.position_embedding[:, 1::2] = np.cos(position * div_term)
         
         # Projection from embedding_dim to hidden_dim (if different)
+        self.embedding_proj = None
         if self.config.embedding_dim != self.config.hidden_dim:
             self.embedding_proj = Linear(self.config.embedding_dim, self.config.hidden_dim)
-        else:
-            self.embedding_proj = None
         
         # Transformer layers
         for i in range(self.config.num_layers):

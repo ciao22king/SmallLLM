@@ -46,6 +46,7 @@ setup(
         "console_scripts": [
             "smallllm=smallllm.cli:main",
             "smallllm-api=smallllm.api:run_api",
+            "smallllm-gui=gui.main_window:main",
         ],
     },
     project_urls={

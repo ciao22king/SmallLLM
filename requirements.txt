@@ -1,20 +1,14 @@
 # SmallLLM Requirements
-# Minimal dependencies for running on old hardware
-
 # Core dependencies
 numpy>=1.16.0
+
+# GUI dependencies (choose one)
+PyQt6>=6.4.0
+# OR
+# PySide6>=6.4.0
 
 # For API server
 Flask>=2.0.0
 
-# Optional: For better performance on newer systems
-# numpy>=1.21.0
-
 # For development/testing
 pytest>=6.0.0
-black>=21.0
-flake8>=3.9.0
-mypy>=0.900
-
-# For documentation
-typing-extensions>=3.7.4
