@@ -15,7 +15,7 @@ class TranslatorPlugin(BasePlugin):
         super().__init__(**config)
         self.display_name = "Translator"
         self.description = "Translate text between different languages"
-        self.icon = "\ud83c\udf0d"
+        self.icon = "🌍"
         self.version = "1.0"
         self.author = "SmallLLM"
         
@@ -171,7 +171,7 @@ class TranslatorPlugin(BasePlugin):
         for lang, lang_dict in self.translation_dict.items():
             if 'en' in lang_dict:
                 count = sum(1 for word in text_lower.split() 
-                           if word in lang_dict['en'])
+                            if word in lang_dict['en'])
                 if count > best_count:
                     best_count = count
                     best_lang = lang
@@ -231,19 +231,19 @@ class TranslatorPlugin(BasePlugin):
                 "name": "translate",
                 "display_name": "Translate Text",
                 "description": "Translate text between languages",
-                "icon": "\ud83c\udf0d"
+                "icon": "🌍"
             },
             {
                 "name": "detect_language",
                 "display_name": "Detect Language",
                 "description": "Detect the language of text",
-                "icon": "\ud83d\udcac"
+                "icon": "💬"
             },
             {
                 "name": "list_languages",
                 "display_name": "List Languages",
                 "description": "List supported languages",
-                "icon": "\ud83d\udccd"
+                "icon": "📍"
             }
         ]
     
