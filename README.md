@@ -1,358 +1,287 @@
-MADE WITH HELP OF MISTRAL VIBE 
-
 # SmallLLM
 
-**La tua AI Locale che gira anche su PC del 2011**
+**Your Local AI that Runs on 2011-era PCs**
 
-SmallLLM è un modello linguistico leggero progettato per funzionare su hardware vecchio (PC del 2011 con RAM e CPU limitate). Include un'interfaccia web completa simile a ChatGPT, un'API REST compatibile con Byok, e una CLI completa.
+SmallLLM is a lightweight language model designed to run on old hardware (2011-era PCs with limited RAM and CPU). It includes a complete ChatGPT-like GUI, a REST API, and a full CLI.
 
-## 🌟 Caratteristiche
+## \ud83c\udf1f Features
 
-- **🤖 Modello Tiny Transformer**: 2-4 layer transformer con configurazioni personalizzabili
-- **💾 Lazy Loading**: Parametri caricati on-demand per risparmiare memoria
-- **🌐 API REST Completa**: Compatibile con Byok e altri servizi
-- **💬 Interfaccia Web**: UI moderna simile a ChatGPT
-- **⚡ CLI Completa**: 10+ comandi per l'uso da terminale
-- **🔒 100% Locale**: Tutti i dati rimangono sul tuo computer
-- **🌍 Multilingua**: Supporto per italiano e inglese
-- **📦 Quantizzazione 8-bit**: Per ridurre ulteriormente l'uso di memoria
+- **\ud83e\udd16 Tiny Transformer Model**: 2-4 layer transformer with customizable configurations
+- **\ud83d\udcbe Lazy Loading**: Parameters loaded on-demand to save memory
+- **\u26a1 Complete CLI**: 10+ commands for terminal usage
+- **\ud83d\udcbb GUI Application**: Modern ChatGPT-like interface with PyQt6
+- **\ud83c\udf10 REST API**: Compatible with various services
+- **\ud83d\udd12 100% Local**: All data stays on your computer
+- **\ud83d\udce6 8-bit Quantization**: To further reduce memory usage
+- **\ud83c\udf0d Plugin System**: Extend functionality with plugins (Code Completer, Web Search, Math Solver, Translator, VS Code Integration)
 
-## 📦 Installazione
+## \ud83d\udce6 Installation
 
-### Requisiti
+### Requirements
 
-- Python 3.6 o successivo
-- NumPy 1.16.0 o successivo
-- Flask 2.0.0 o successivo (per l'API)
+- Python 3.6 or higher
+- NumPy 1.16.0 or higher
+- PyQt6 or PySide6 (for GUI)
+- Flask 2.0.0 or higher (for API)
 
 ```bash
-pip install numpy Flask
+pip install numpy Flask PyQt6
 ```
 
-### Installazione del Pacchetto
+### Package Installation
 
 ```bash
-# Clona il repository
+# Clone the repository
 git clone https://github.com/ciao22king/SmallLLM.git
 cd SmallLLM
 
-# Installa in modalità sviluppo
+# Install in development mode
 pip install -e .
 
-# Oppure installa le dipendenze manualmente
+# Or install requirements manually
 pip install -r requirements.txt
 ```
 
-## 🚀 Avvio Rapido
+## \ud83d\ude80 Quick Start
 
-### 1. Avvia l'API Server
+### 1. Run the GUI
 
 ```bash
-# Avvia il server API
+# Run the GUI application
+python -m gui.main_window
+
+# Or after installation
+smallllm-gui
+```
+
+### 2. Use the CLI
+
+```bash
+# Generate text
+python -m smallllm generate --prompt "Hello, how are you?" --max-tokens 20
+
+# Chat mode
+python -m smallllm chat --prompt "What is the meaning of life?"
+
+# Interactive mode
+python -m smallllm interactive
+
+# Show model info
+python -m smallllm info
+```
+
+### 3. Run the API Server
+
+```bash
+# Start the API server
 python -m smallllm.api
 
-# Oppure usa l'entry point
+# Or use the entry point
 smallllm-api
 ```
 
-### 2. Avvia l'Interfaccia Web
+The API will be available at `http://localhost:5000`
 
+#### API Endpoints
+
+- `POST /generate` - Generate text
+- `POST /chat` - Chat with the AI
+- `GET /info` - Get model information
+- `GET /health` - Health check
+
+Example request:
 ```bash
-# Metodo 1: Usa il server Python integrato
-cd web
-python run_server.py
-
-# Metodo 2: Usa qualsiasi server web
-cd web
-python -m http.server 8000
-```
-
-### 3. Apri il Browser
-
-Visita `http://localhost:8080` (o la porta che hai specificato) nel tuo browser.
-
-### 4. Configura l'API nell'Interfaccia Web
-
-Nella pagina web:
-1. Clicca sull'icona ⚙️ (Impostazioni)
-2. Imposta l'URL API su `http://localhost:5000`
-3. Clicca "Testa Connessione"
-4. Salva le impostazioni
-
-## 🌐 Usare con Byok
-
-1. **Avvia SmallLLM API**:
-   ```bash
-   python -m smallllm.api --host 0.0.0.0 --port 5000
-   ```
-
-2. **In Byok**:
-   - Aggiungi un modello personalizzato
-   - URL Base: `http://localhost:5000/v1`
-   - Nome modello: `smallllm:tiny`, `smallllm:small`, o `smallllm:medium`
-
-3. **Usa il modello** come qualsiasi altro modello in Byok!
-
-## 💬 Interfaccia Web
-
-L'interfaccia web offre:
-
-- **Chat moderna** simile a ChatGPT
-- **Cronologia delle conversazioni** con possibilità di eliminare
-- **Impostazioni personalizzabili** (tema, URL API, ecc.)
-- **Controlli rapidi** per temperatura e max tokens
-- **Esempi predefiniti** per iniziare
-- **Copia negli appunti** delle risposte
-- **Responsive design** per mobile e desktop
-
-### Comandi Tastiera
-
-| Scorciatoia | Azione |
-|------------|--------|
-| `Ctrl/Cmd + ,` | Apri impostazioni |
-| `Ctrl/Cmd + N` | Nuova chat |
-| `Enter` | Invia messaggio |
-| `Shift + Enter` | Nuova linea |
-| `Escape` | Chiudi menu a tendina |
-
-## 🎯 CLI Comandi
-
-### Genera Testo
-
-```bash
-smallllm generate --prompt "Ciao come stai?" --max-tokens 50 --config tiny
-```
-
-### Chat
-
-```bash
-smallllm chat --prompt "Raccontami una barzelletta" --temperature 0.9
-```
-
-### Modalità Interattiva
-
-```bash
-smallllm interactive
-```
-
-### Addestramento (dimostrativo)
-
-```bash
-smallllm train --text "Testo per addestramento" --epochs 1 --config tiny
-```
-
-### Informazioni Modello
-
-```bash
-smallllm info --config small
-```
-
-### Memoria
-
-```bash
-smallllm memory --config tiny
-```
-
-### Comandi Disponibili
-
-```bash
-smallllm --help
-```
-
-## 🔌 API REST
-
-### Endpoint Standard
-
-| Metodo | Endpoint | Descrizione |
-|--------|----------|-------------|
-| GET | `/` | Informazioni API |
-| GET | `/api/health` | Health check |
-| GET | `/api/info` | Informazioni modello |
-| GET | `/api/models` | Lista modelli disponibili |
-| GET | `/api/memory` | Uso memoria |
-| POST | `/api/generate` | Genera testo |
-| POST | `/api/chat` | Chat con AI |
-| POST | `/api/tokenize` | Tokenizza testo |
-| POST | `/api/detokenize` | Detokenizza testo |
-| POST | `/api/batch-generate` | Generazione batch |
-
-### Endpoint Compatibili con Byok
-
-| Metodo | Endpoint | Descrizione |
-|--------|----------|-------------|
-| POST | `/v1/chat/completions` | Chat completions |
-| POST | `/v1/completions` | Completions |
-| GET | `/v1/models` | Lista modelli |
-| GET | `/v1/models/<nome>` | Info modello |
-
-### Esempio Richiesta API
-
-```bash
-# Genera testo
-curl -X POST http://localhost:5000/api/generate \
+curl -X POST http://localhost:5000/generate \
   -H "Content-Type: application/json" \
-  -d '{"prompt": "Ciao mondo", "max_tokens": 50, "temperature": 0.7}'
-
-# Chat
-curl -X POST http://localhost:5000/api/chat \
-  -H "Content-Type: application/json" \
-  -d '{"prompt": "Come va?", "max_tokens": 50}'
-
-# Byok-style request
-curl -X POST http://localhost:5000/v1/chat/completions \
-  -H "Content-Type: application/json" \
-  -d '{"model": "smallllm:small", "messages": [{"role": "user", "content": "Ciao!"}], "max_tokens": 50}'
+  -d '{"prompt": "Hello, how are you?", "max_tokens": 20}'
 ```
 
-## ⚙️ Configurazioni
+## \u2699\ufe0f Configuration
 
-SmallLLM offre tre configurazioni predefinite:
+SmallLLM provides three predefined configurations:
 
-| Config | Vocab | Embed | Hidden | Layers | Heads | Memoria (32-bit) | Memoria (8-bit) |
-|--------|-------|--------|--------|--------|-------|------------------|------------------|
-| tiny   | 1024  | 32     | 64     | 2      | 2     | ~0.76 MB         | ~0.19 MB         |
-| small  | 2048  | 64     | 128    | 3      | 4     | ~3.79 MB         | ~0.95 MB         |
-| medium | 4096  | 128    | 256    | 4      | 8     | ~28 MB           | ~7 MB            |
+| Config | Vocab Size | Embedding Dim | Hidden Dim | Layers | Heads | Max Seq Len | Estimated Params |
+|--------|------------|---------------|------------|-------|-------------|--------------|
+| tiny | 1024 | 32 | 64 | 2 | 2 | 64 | ~100K |
+| small | 2048 | 64 | 128 | 3 | 4 | 128 | ~500K |
+| medium | 4096 | 128 | 256 | 4 | 8 | 256 | ~2M |
 
-### Configurazione Personalizzata
+### Using a Specific Configuration
 
 ```bash
-# Crea una configurazione personalizzata
-smallllm config --vocab-size 2048 --embedding-dim 64 --hidden-dim 128 --num-layers 3 --save-path custom.json
+# In CLI
+python -m smallllm generate --prompt "Hello" --config small
 
-# Usa la configurazione personalizzata
-smallllm generate --prompt "Test" --config-path custom.json
+# In GUI
+Select from the Settings tab
 ```
 
-## 📊 Python API
+## \ud83d\udcbb GUI Features
 
-```python
-from smallllm import SmallLLM, Tokenizer, ModelConfig
+- **ChatGPT-like Interface**: Modern chat interface with message bubbles
+- **Dark Theme**: Professional dark theme
+- **Multiple Tabs**: Chat, Settings, Info, Plugins
+- **Plugin Management**: Enable/disable plugins easily
+- **Model Configuration**: Change model settings on the fly
+- **Memory Monitoring**: View memory usage in real-time
+- **Model Actions**: Load, save, quantize models
 
-# Crea modello con configurazione predefinita
-model = SmallLLM()
+### Available Plugins
 
-# Genera testo
-result = model.generate("Ciao come stai?", max_new_tokens=50, temperature=0.7)
-print(result)
+1. **Code Completer** - Auto-complete code snippets
+2. **VS Code Integration** - Connect to VS Code for code analysis
+3. **Web Search** - Search the web for information
+4. **Math Solver** - Solve mathematical expressions
+5. **Translator** - Translate text between languages
 
-# Chat
-response = model.chat("Raccontami una barzelletta")
-print(response)
+## \ud83d\udcbe Lazy Loading
 
-# Usa configurazione personalizzata
-config = ModelConfig(
-    vocab_size=2048,
-    embedding_dim=64,
-    hidden_dim=128,
-    num_layers=3,
-    num_heads=4,
-)
-model = SmallLLM(config)
+SmallLLM uses lazy loading to optimize memory usage:
 
-# Tokenizza
-tokenizer = Tokenizer(vocab_size=2048)
-token_ids = tokenizer.encode("Ciao mondo")
-text = tokenizer.decode(token_ids)
-```
+- **Parameters are loaded on-demand** during generation
+- **Only necessary layers** are loaded into memory
+- **8-bit quantization** reduces memory usage by ~75%
+- **Perfect for old hardware** with limited RAM
 
-## 💡 Suggerimenti per Hardware Vecchio
+### Memory Usage Estimates
 
-### Per PC del 2011 (2-4GB RAM)
+| Config | Without Quantization | With 8-bit Quantization |
+|--------|---------------------|------------------------|
+| tiny | ~10-20 MB | ~5-10 MB |
+| small | ~40-60 MB | ~15-25 MB |
+| medium | ~150-200 MB | ~50-75 MB |
 
-1. **Usa la configurazione `tiny`**:
-   ```bash
-   smallllm generate --config tiny
-   ```
+## \ud83d\udce6 Model Weights
 
-2. **Attiva la quantizzazione 8-bit**:
-   ```python
-   model = SmallLLM()
-   model.quantize()  # Quantizza i pesi a 8-bit
-   ```
-
-3. **Limita i token**:
-   ```bash
-   smallllm generate --max-tokens 30
-   ```
-
-4. **Usa temperature più basse** per risposte più deterministiche (più veloci):
-   ```bash
-   smallllm generate --temperature 0.3
-   ```
-
-### Per Hardware Moderno
-
-- Usa `small` o `medium` per migliore qualità
-- Aumenta `max_new_tokens` per risposte più lunghe
-- Usa temperature più alte (0.7-1.0) per risposte più creative
-
-## 🎨 Personalizzazione
-
-### Temi
-
-L'interfaccia web supporta tre temi:
-- **Chiaro** (Light)
-- **Scuro** (Dark)
-- **Sistema** (System) - segue le preferenze del sistema
-
-### Modelli Personalizzati
-
-Puoi creare e addestrare modelli personalizzati:
+### Saving Model Weights
 
 ```bash
-# Addestra su un file di testo
-smallllm train --file data.txt --epochs 3 --config tiny --save-path my_model
-
-# Carica il modello addestrato
-smallllm load --path my_model
-
-# Usa il modello caricato
-smallllm generate --prompt "Test" --model-path my_model
+python -m smallllm save --path ./my_model
 ```
 
-## 📁 Struttura del Progetto
+This creates a directory with:
+- `config.json` - Model configuration
+- `tokenizer.json` - Tokenizer configuration
+- `embedding.npy` - Embedding weights
+- `position_embedding.npy` - Position embedding
+- `layer_*.npy` - Transformer layer weights
+- `final_norm.npy` - Final layer norm
+- `lm_head.npy` - Language model head
 
-```
-SmallLLM/
-├── smallllm/
-│   ├── __init__.py      # Package init
-│   ├── config.py        # Configurazioni modello
-│   ├── tokenizer.py     # Tokenizer leggero
-│   ├── model.py         # Modello LLM
-│   ├── cli.py           # CLI
-│   └── api.py           # API REST
-├── web/
-│   ├── index.html       # Interfaccia web
-│   ├── style.css        # Stili
-│   ├── app.js           # Logica JavaScript
-│   └── run_server.py    # Server web
-├── tests/
-│   ├── test_tokenizer.py
-│   ├── test_config.py
-│   ├── test_model.py
-│   └── test_cli.py
-├── README.md
-├── requirements.txt
-├── setup.py
-└── api_example.py
+### Loading Model Weights
+
+```bash
+python -m smallllm load --path ./my_model
 ```
 
-## 🤝 Contribuire
+### Training (Basic)
 
-I contributi sono benvenuti! Sentiti libero di:
+```bash
+python -m smallllm train --text "Your training text here" --epochs 1 --config tiny
+```
 
-1. Reportare bug
-2. Suggerire nuove funzionalità
-3. Inviare pull request
-4. Migliorare la documentazione
+## \u2728 Quantization
 
-## 📜 Licenza
+Reduce model size and memory usage with 8-bit quantization:
 
-MIT License - vedi [LICENSE](LICENSE) per i dettagli.
+```bash
+# Quantize the current model
+python -m smallllm quantize
 
----
+# Or in GUI
+Click "Quantize (8-bit)" in Settings tab
+```
 
-**Goditi la tua AI locale su qualsiasi hardware!** 🎉
+## \ud83d\udc8b CLI Commands
 
-> "SmallLLM: Intelligenza artificiale per tutti, anche su hardware vecchio"
+| Command | Description |
+|---------|-------------|
+| `generate` | Generate text from a prompt |
+| `chat` | Simple chat with the AI |
+| `interactive` | Start interactive chat session |
+| `train` | Train the model (basic) |
+| `info` | Show model information |
+| `save` | Save model weights |
+| `load` | Load model weights |
+| `tokenize` | Tokenize text |
+| `memory` | Show memory usage |
+| `config` | Create custom configuration |
+
+### Example Commands
+
+```bash
+# Generate with specific settings
+python -m smallllm generate -p "Tell me a story" -m 50 -t 0.9 -k 40
+
+# Chat with the AI
+python -m smallllm chat -p "What is Python?" -m 30
+
+# Show model info
+python -m smallllm info --config medium
+
+# Tokenize text
+python -m smallllm tokenize -t "Hello world"
+
+# Create custom config
+python -m smallllm config --vocab-size 2048 --hidden-dim 128 --num-layers 3 -s my_config.json
+```
+
+## \ud83d\udc80 Requirements
+
+See `requirements.txt` for full list of dependencies.
+
+### Core Requirements
+
+```
+numpy>=1.16.0
+Flask>=2.0.0
+```
+
+### GUI Requirements (Optional)
+
+```
+PyQt6>=6.4.0
+# OR
+PySide6>=6.4.0
+```
+
+### Plugin Requirements (Optional)
+
+```
+sympy>=1.12.0  # For Math Solver
+requests>=2.28.0  # For Web Search
+```
+
+## \ud83d\udd27 Troubleshooting
+
+### PyQt6 Import Error
+
+If you get `libGL.so.1` error on Linux:
+```bash
+sudo apt-get install libgl1-mesa-glx
+```
+
+### No Module Named Error
+
+Make sure you have installed all requirements:
+```bash
+pip install -r requirements.txt
+```
+
+### Model Not Generating Good Text
+
+The model generates random text without pre-trained weights. You need to:
+1. Train the model on your data
+2. Or load pre-trained weights
+
+## \ud83d\udd17 License
+
+MIT License - See `LICENSE` file for details.
+
+## \ud83d\udc81 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## \ud83d\udc0d Author
+
+**ciao22king** - [GitHub Profile](https://github.com/ciao22king)
