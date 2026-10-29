@@ -3,15 +3,14 @@ REST API for SmallLLM
 Lightweight API that can be used with sites like Byok
 """
 
-import json
 import time
-from typing import Optional, Dict, Any
-from flask import Flask, request, jsonify, make_response
+from typing import Optional
+from flask import Flask, request, jsonify
 
 try:
     from .model import SmallLLM
     from .tokenizer import Tokenizer
-    from .config import ModelConfig, get_config_by_name
+    from .config import get_config_by_name
     HAS_CORE = True
 except ImportError:
     HAS_CORE = False
@@ -22,20 +21,27 @@ app = Flask(__name__)
 # Global model instance (lazy loaded)
 MODEL_INSTANCE: Optional[SmallLLM] = None
 MODEL_CONFIG: str = "small"
+# Cache of models built for explicitly requested configs
+_MODEL_CACHE: dict = {}
 
 
 def get_model(config_name: str = None) -> SmallLLM:
-    """Get or create model instance."""
-    global MODEL_INSTANCE, MODEL_CONFIG
-    
-    config_to_use = config_name or MODEL_CONFIG
-    
-    if MODEL_INSTANCE is None or MODEL_CONFIG != config_to_use:
-        config = get_config_by_name(config_to_use)
-        MODEL_INSTANCE = SmallLLM(config)
-        MODEL_CONFIG = config_to_use
-    
-    return MODEL_INSTANCE
+    """Get or create a model instance for the requested configuration.
+
+    An explicit ``config_name`` builds (and caches) a model for that config
+    without changing the server default in ``MODEL_CONFIG``.
+    """
+    global MODEL_INSTANCE
+
+    if config_name is None:
+        if MODEL_INSTANCE is None:
+            MODEL_INSTANCE = SmallLLM(get_config_by_name(MODEL_CONFIG))
+        return MODEL_INSTANCE
+
+    # Explicit config: keep a per-config cache, leave the default untouched.
+    if _MODEL_CACHE.get(config_name) is None:
+        _MODEL_CACHE[config_name] = SmallLLM(get_config_by_name(config_name))
+    return _MODEL_CACHE[config_name]
 
 
 @app.route('/')
@@ -63,7 +69,7 @@ def index():
 def health():
     """Health check endpoint."""
     try:
-        model = get_model()
+        get_model()
         return jsonify({
             "status": "healthy",
             "model_loaded": MODEL_INSTANCE is not None,
@@ -79,7 +85,7 @@ def info():
     try:
         model = get_model()
         config = model.config
-        
+
         return jsonify({
             "model": "SmallLLM",
             "config": MODEL_CONFIG,
@@ -99,21 +105,22 @@ def info():
 @app.route('/api/config', methods=['GET', 'POST'])
 def config_endpoint():
     """Get or set model configuration."""
-    global MODEL_CONFIG
-    
+    global MODEL_CONFIG, MODEL_INSTANCE
+
     if request.method == 'GET':
         return jsonify({"current_config": MODEL_CONFIG, "available": ["tiny", "small", "medium"]})
-    
+
     elif request.method == 'POST':
-        data = request.get_json()
+        data = request.get_json(silent=True) or {}
         new_config = data.get('config')
-        
+
         if new_config not in ["tiny", "small", "medium"]:
             return jsonify({"error": f"Invalid config: {new_config}. Use: tiny, small, medium"}), 400
-        
+
         MODEL_CONFIG = new_config
         MODEL_INSTANCE = None  # Force reload on next request
-        
+        _MODEL_CACHE.clear()
+
         return jsonify({"status": "ok", "config": MODEL_CONFIG})
 
 
@@ -121,7 +128,7 @@ def config_endpoint():
 def generate():
     """
     Generate text from a prompt.
-    
+
     Request body:
     {
         "prompt": "Your text here",
@@ -132,20 +139,20 @@ def generate():
     }
     """
     try:
-        data = request.get_json()
-        
-        prompt = data.get('prompt', '')
+        data = request.get_json(silent=True) or {}
+
+        prompt = _extract_prompt(data)
         max_tokens = data.get('max_tokens', 50)
         temperature = data.get('temperature', 0.7)
         top_k = data.get('top_k', 50)
         config_name = data.get('config', MODEL_CONFIG)
         do_sample = data.get('do_sample', True)
-        
+
         if not prompt:
             return jsonify({"error": "prompt is required"}), 400
-        
+
         model = get_model(config_name)
-        
+
         start_time = time.time()
         result = model.generate(
             prompt=prompt,
@@ -155,44 +162,66 @@ def generate():
             do_sample=do_sample,
         )
         elapsed = time.time() - start_time
-        
+
         return jsonify({
             "generated_text": result,
             "config": config_name,
             "time_seconds": round(elapsed, 4),
             "tokens_generated": max_tokens,
         })
-    
+
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+def _extract_prompt(data: dict) -> str:
+    """Return the user prompt from either a plain ``prompt`` or OpenAI-style
+    ``messages`` payload (the /v1 endpoints advertise OpenAI compatibility)."""
+    prompt = data.get('prompt', '')
+    if isinstance(prompt, list):
+        # OpenAI's completions API also accepts a list of prompts; use the first.
+        prompt = prompt[0] if prompt else ''
+    if prompt:
+        return prompt
+
+    messages = data.get('messages') or []
+    for message in reversed(messages):
+        if isinstance(message, dict) and message.get('role') == 'user':
+            return message.get('content', '') or ''
+    return ''
 
 
 @app.route('/api/chat', methods=['POST'])
 def chat():
     """
     Chat with the AI.
-    
-    Request body:
+
+    Request body (either form is accepted):
     {
         "prompt": "Your message",
         "max_tokens": 50,
         "temperature": 0.7,
         "config": "small"
     }
+    {
+        "messages": [{"role": "user", "content": "Your message"}],
+        "max_tokens": 50,
+        "config": "small"
+    }
     """
     try:
-        data = request.get_json()
-        
-        prompt = data.get('prompt', '')
+        data = request.get_json(silent=True) or {}
+
+        prompt = _extract_prompt(data)
         max_tokens = data.get('max_tokens', 50)
         temperature = data.get('temperature', 0.7)
         config_name = data.get('config', MODEL_CONFIG)
-        
+
         if not prompt:
             return jsonify({"error": "prompt is required"}), 400
-        
+
         model = get_model(config_name)
-        
+
         start_time = time.time()
         result = model.chat(
             prompt=prompt,
@@ -200,13 +229,13 @@ def chat():
             temperature=temperature,
         )
         elapsed = time.time() - start_time
-        
+
         return jsonify({
             "response": result,
             "config": config_name,
             "time_seconds": round(elapsed, 4),
         })
-    
+
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -215,7 +244,7 @@ def chat():
 def tokenize():
     """
     Tokenize text.
-    
+
     Request body:
     {
         "text": "Text to tokenize",
@@ -223,23 +252,23 @@ def tokenize():
     }
     """
     try:
-        data = request.get_json()
-        
+        data = request.get_json(silent=True) or {}
+
         text = data.get('text', '')
         vocab_size = data.get('vocab_size', 2048)
-        
+
         if not text:
             return jsonify({"error": "text is required"}), 400
-        
+
         tokenizer = Tokenizer(vocab_size=vocab_size)
         token_ids = tokenizer.encode(text)
-        
+
         return jsonify({
             "tokens": token_ids,
             "num_tokens": len(token_ids),
             "vocab_size": tokenizer.get_vocab_size(),
         })
-    
+
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -248,7 +277,7 @@ def tokenize():
 def detokenize():
     """
     Detokenize text.
-    
+
     Request body:
     {
         "token_ids": [1, 2, 3, 4],
@@ -256,22 +285,22 @@ def detokenize():
     }
     """
     try:
-        data = request.get_json()
-        
+        data = request.get_json(silent=True) or {}
+
         token_ids = data.get('token_ids', [])
         vocab_size = data.get('vocab_size', 2048)
-        
+
         if not token_ids:
             return jsonify({"error": "token_ids is required"}), 400
-        
+
         tokenizer = Tokenizer(vocab_size=vocab_size)
         text = tokenizer.decode(token_ids)
-        
+
         return jsonify({
             "text": text,
             "num_tokens": len(token_ids),
         })
-    
+
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -280,7 +309,7 @@ def detokenize():
 def batch_generate():
     """
     Generate multiple responses from prompts.
-    
+
     Request body:
     {
         "prompts": ["prompt 1", "prompt 2"],
@@ -290,18 +319,18 @@ def batch_generate():
     }
     """
     try:
-        data = request.get_json()
-        
+        data = request.get_json(silent=True) or {}
+
         prompts = data.get('prompts', [])
         max_tokens = data.get('max_tokens', 50)
         temperature = data.get('temperature', 0.7)
         config_name = data.get('config', MODEL_CONFIG)
-        
+
         if not prompts:
             return jsonify({"error": "prompts is required"}), 400
-        
+
         model = get_model(config_name)
-        
+
         results = []
         for prompt in prompts:
             start_time = time.time()
@@ -311,19 +340,19 @@ def batch_generate():
                 temperature=temperature,
             )
             elapsed = time.time() - start_time
-            
+
             results.append({
                 "prompt": prompt,
                 "generated_text": result,
                 "time_seconds": round(elapsed, 4),
             })
-        
+
         return jsonify({
             "results": results,
             "config": config_name,
             "num_prompts": len(prompts),
         })
-    
+
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -363,7 +392,7 @@ def list_models():
             "recommended": "For better quality on capable hardware",
         },
     }
-    
+
     return jsonify({
         "models": configs,
         "current": MODEL_CONFIG,
@@ -376,7 +405,7 @@ def memory_info():
     try:
         model = get_model()
         memory = model.get_memory_usage()
-        
+
         return jsonify({
             "config": MODEL_CONFIG,
             "memory_usage": memory,
@@ -391,10 +420,10 @@ def memory_info():
 def stream_generate():
     """
     Generate text with streaming (for Byok-style APIs).
-    
+
     This endpoint returns a simple streaming response.
     For true streaming, use the /api/generate endpoint.
-    
+
     Request body:
     {
         "prompt": "Your text here",
@@ -404,18 +433,18 @@ def stream_generate():
     }
     """
     try:
-        data = request.get_json()
-        
-        prompt = data.get('prompt', '')
+        data = request.get_json(silent=True) or {}
+
+        prompt = _extract_prompt(data)
         max_tokens = data.get('max_tokens', 50)
         temperature = data.get('temperature', 0.7)
         config_name = data.get('config', MODEL_CONFIG)
-        
+
         if not prompt:
             return jsonify({"error": "prompt is required"}), 400
-        
+
         model = get_model(config_name)
-        
+
         start_time = time.time()
         result = model.generate(
             prompt=prompt,
@@ -423,7 +452,7 @@ def stream_generate():
             temperature=temperature,
         )
         elapsed = time.time() - start_time
-        
+
         # Return in a format compatible with Byok and similar services
         return jsonify({
             "id": f"smallllm-{int(time.time())}",
@@ -442,7 +471,7 @@ def stream_generate():
             },
             "time_seconds": round(elapsed, 4),
         })
-    
+
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -450,14 +479,82 @@ def stream_generate():
 # For Byok compatibility - alias endpoints
 @app.route('/v1/chat/completions', methods=['POST'])
 def byok_chat_completions():
-    """Byok-compatible chat completions endpoint."""
-    return chat()
+    """Byok/OpenAI-compatible chat completions endpoint."""
+    try:
+        data = request.get_json(silent=True) or {}
+
+        prompt = _extract_prompt(data)
+        max_tokens = data.get('max_tokens', 50)
+        temperature = data.get('temperature', 0.7)
+        config_name = data.get('config', MODEL_CONFIG)
+
+        if not prompt:
+            return jsonify({"error": {"message": "prompt is required",
+                                      "type": "invalid_request_error"}}), 400
+
+        model = get_model(config_name)
+        result = model.chat(prompt=prompt, max_new_tokens=max_tokens,
+                            temperature=temperature)
+
+        return jsonify({
+            "id": f"smallllm-{int(time.time())}",
+            "object": "chat.completion",
+            "created": int(time.time()),
+            "model": f"smallllm:{config_name}",
+            "choices": [{
+                "index": 0,
+                "message": {"role": "assistant", "content": result},
+                "finish_reason": "stop",
+            }],
+            "usage": {
+                "prompt_tokens": len(model.tokenizer.encode(prompt)),
+                "completion_tokens": len(model.tokenizer.encode(result)),
+                "total_tokens": (len(model.tokenizer.encode(prompt))
+                                 + len(model.tokenizer.encode(result))),
+            },
+        })
+    except Exception as e:
+        return jsonify({"error": {"message": str(e), "type": "server_error"}}), 500
 
 
 @app.route('/v1/completions', methods=['POST'])
 def byok_completions():
-    """Byok-compatible completions endpoint."""
-    return stream_generate()
+    """Byok/OpenAI-compatible completions endpoint."""
+    try:
+        data = request.get_json(silent=True) or {}
+
+        prompt = _extract_prompt(data)
+        max_tokens = data.get('max_tokens', 50)
+        temperature = data.get('temperature', 0.7)
+        config_name = data.get('config', MODEL_CONFIG)
+
+        if not prompt:
+            return jsonify({"error": {"message": "prompt is required",
+                                      "type": "invalid_request_error"}}), 400
+
+        model = get_model(config_name)
+        result = model.generate(prompt=prompt, max_new_tokens=max_tokens,
+                                temperature=temperature)
+
+        return jsonify({
+            "id": f"smallllm-{int(time.time())}",
+            "object": "text_completion",
+            "created": int(time.time()),
+            "model": f"smallllm:{config_name}",
+            "choices": [{
+                "text": result,
+                "index": 0,
+                "finish_reason": "length",
+            }],
+            "usage": {
+                "prompt_tokens": len(model.tokenizer.encode(prompt)),
+                "completion_tokens": len(model.tokenizer.encode(result)),
+                "total_tokens": (len(model.tokenizer.encode(prompt))
+                                 + len(model.tokenizer.encode(result))),
+            },
+        })
+    except Exception as e:
+        return jsonify({"error": {"message": str(e), "type": "server_error"}}), 500
 
 
 @app.route('/v1/models', methods=['GET'])
@@ -498,7 +595,7 @@ def byok_model_info(model_name: str):
             "parent": None,
         },
     }
-    
+
     if model_name in configs:
         return jsonify(configs[model_name])
     else:
@@ -527,7 +624,7 @@ def run_api(host: str = '0.0.0.0', port: int = 5000, debug: bool = False):
     print("  GET  /v1/models           - List models")
     print("  GET  /v1/models/<name>    - Model info")
     print("\nPress Ctrl+C to stop")
-    
+
     app.run(host=host, port=port, debug=debug)
 
 

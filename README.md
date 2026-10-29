@@ -4,18 +4,18 @@
 
 SmallLLM is a lightweight language model designed to run on old hardware (2011-era PCs with limited RAM and CPU). It includes a complete ChatGPT-like GUI, a REST API, and a full CLI.
 
-## \ud83c\udf1f Features
+## 🌟 Features
 
-- **\ud83e\udd16 Tiny Transformer Model**: 2-4 layer transformer with customizable configurations
-- **\ud83d\udcbe Lazy Loading**: Parameters loaded on-demand to save memory
-- **\u26a1 Complete CLI**: 10+ commands for terminal usage
-- **\ud83d\udcbb GUI Application**: Modern ChatGPT-like interface with PyQt6
-- **\ud83c\udf10 REST API**: Compatible with various services
-- **\ud83d\udd12 100% Local**: All data stays on your computer
-- **\ud83d\udce6 8-bit Quantization**: To further reduce memory usage
-- **\ud83c\udf0d Plugin System**: Extend functionality with plugins (Code Completer, Web Search, Math Solver, Translator, VS Code Integration)
+- **🤖 Tiny Transformer Model**: 2-4 layer transformer with customizable configurations
+- **💾 Lazy Loading**: Parameters loaded on-demand to save memory
+- **⚡ Complete CLI**: 10+ commands for terminal usage
+- **💻 GUI Application**: Modern ChatGPT-like interface with PyQt6
+- **🌐 REST API**: Compatible with various services
+- **🔒 100% Local**: All data stays on your computer
+- **📦 8-bit Quantization**: To further reduce memory usage
+- **🌍 Plugin System**: Extend functionality with plugins (Code Completer, Web Search, Math Solver, Translator, VS Code Integration)
 
-## \ud83d\udce6 Installation
+## 📦 Installation
 
 ### Requirements
 
@@ -42,7 +42,7 @@ pip install -e .
 pip install -r requirements.txt
 ```
 
-## \ud83d\ude80 Quick Start
+## 🚀 Quick Start
 
 ### 1. Run the GUI
 
@@ -84,19 +84,26 @@ The API will be available at `http://localhost:5000`
 
 #### API Endpoints
 
-- `POST /generate` - Generate text
-- `POST /chat` - Chat with the AI
-- `GET /info` - Get model information
-- `GET /health` - Health check
+- `POST /api/generate` - Generate text
+- `POST /api/chat` - Chat with the AI
+- `POST /api/tokenize` - Tokenize text
+- `POST /api/detokenize` - Detokenize text
+- `GET /api/info` - Get model information
+- `GET /api/health` - Health check
+- `GET /api/models` - List available configurations
+- `GET /api/config` / `POST /api/config` - Get or set the default configuration
+
+OpenAI/Byok-compatible aliases are also exposed: `POST /v1/chat/completions`,
+`POST /v1/completions`, `GET /v1/models` and `GET /v1/models/<name>`.
 
 Example request:
 ```bash
-curl -X POST http://localhost:5000/generate \
+curl -X POST http://localhost:5000/api/generate \
   -H "Content-Type: application/json" \
   -d '{"prompt": "Hello, how are you?", "max_tokens": 20}'
 ```
 
-## \u2699\ufe0f Configuration
+## ⚙️ Configuration
 
 SmallLLM provides three predefined configurations:
 
@@ -116,7 +123,7 @@ python -m smallllm generate --prompt "Hello" --config small
 Select from the Settings tab
 ```
 
-## \ud83d\udcbb GUI Features
+## 💻 GUI Features
 
 - **ChatGPT-like Interface**: Modern chat interface with message bubbles
 - **Dark Theme**: Professional dark theme
@@ -134,7 +141,7 @@ Select from the Settings tab
 4. **Math Solver** - Solve mathematical expressions
 5. **Translator** - Translate text between languages
 
-## \ud83d\udcbe Lazy Loading
+## 💾 Lazy Loading
 
 SmallLLM uses lazy loading to optimize memory usage:
 
@@ -151,7 +158,7 @@ SmallLLM uses lazy loading to optimize memory usage:
 | small | ~40-60 MB | ~15-25 MB |
 | medium | ~150-200 MB | ~50-75 MB |
 
-## \ud83d\udce6 Model Weights
+## 📦 Model Weights
 
 ### Saving Model Weights
 
@@ -180,7 +187,7 @@ python -m smallllm load --path ./my_model
 python -m smallllm train --text "Your training text here" --epochs 1 --config tiny
 ```
 
-## \u2728 Quantization
+## ✨ Quantization
 
 Reduce model size and memory usage with 8-bit quantization:
 
@@ -192,7 +199,7 @@ python -m smallllm quantize
 Click "Quantize (8-bit)" in Settings tab
 ```
 
-## \ud83d\udc8b CLI Commands
+## 💋 CLI Commands
 
 | Command | Description |
 |---------|-------------|
@@ -203,6 +210,7 @@ Click "Quantize (8-bit)" in Settings tab
 | `info` | Show model information |
 | `save` | Save model weights |
 | `load` | Load model weights |
+| `quantize` | Quantize a model to 8-bit |
 | `tokenize` | Tokenize text |
 | `memory` | Show memory usage |
 | `config` | Create custom configuration |
@@ -226,7 +234,7 @@ python -m smallllm tokenize -t "Hello world"
 python -m smallllm config --vocab-size 2048 --hidden-dim 128 --num-layers 3 -s my_config.json
 ```
 
-## \ud83d\udc80 Requirements
+## 💀 Requirements
 
 See `requirements.txt` for full list of dependencies.
 
@@ -252,7 +260,7 @@ sympy>=1.12.0  # For Math Solver
 requests>=2.28.0  # For Web Search
 ```
 
-## \ud83d\udd27 Troubleshooting
+## 🔧 Troubleshooting
 
 ### PyQt6 Import Error
 
@@ -274,14 +282,14 @@ The model generates random text without pre-trained weights. You need to:
 1. Train the model on your data
 2. Or load pre-trained weights
 
-## \ud83d\udd17 License
+## 🔗 License
 
 MIT License - See `LICENSE` file for details.
 
-## \ud83d\udc81 Contributing
+## 💁 Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
-## \ud83d\udc0d Author
+## 🐍 Author
 
 **ciao22king** - [GitHub Profile](https://github.com/ciao22king)

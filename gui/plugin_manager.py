@@ -3,18 +3,17 @@ Plugin Manager for SmallLLM GUI
 Handles loading, managing, and running plugins
 """
 
-import os
 import json
 import importlib
 import sys
 from pathlib import Path
-from typing import Dict, List, Optional, Any, Type
+from typing import Dict, List, Optional, Any
 import traceback
 
 
 class PluginSpec:
     """Plugin specification."""
-    
+
     def __init__(
         self,
         name: str,
@@ -42,19 +41,27 @@ class PluginSpec:
 
 class PluginManager:
     """Manages plugins for SmallLLM GUI."""
-    
+
+    # Map built-in plugin name -> "module:ClassName" import target
+    BUILTIN_PLUGIN_CLASSES = {
+        "code_completer": "code_completer:CodeCompleterPlugin",
+        "vscode_integration": "vscode_integration:VSCodeIntegrationPlugin",
+        "web_search": "web_search:WebSearchPlugin",
+        "math_solver": "math_solver:MathSolverPlugin",
+        "translator": "translator:TranslatorPlugin",
+    }
+
     def __init__(self, plugins_dir: str = "plugins"):
         """
         Initialize plugin manager.
-        
+
         Args:
-            plugins_dir: Directory to look for plugins
+            plugins_dir: Directory to look for third-party plugins
         """
         self.plugins_dir = Path(plugins_dir)
         self.plugins: Dict[str, PluginSpec] = {}
         self.loaded_plugins: Dict[str, Any] = {}
-        self.plugins_dir.mkdir(exist_ok=True)
-        
+
         # Built-in plugins
         self.builtin_plugins = {
             "code_completer": {
@@ -98,10 +105,10 @@ class PluginManager:
                 "enabled": False
             }
         }
-        
+
         # Load plugins
         self.load_plugins()
-    
+
     def load_plugins(self):
         """Load all available plugins."""
         # Add built-in plugins
@@ -115,12 +122,13 @@ class PluginManager:
                 enabled=spec.get("enabled", False),
                 icon=spec.get("icon", "🧩")
             )
-        
-        # Load from plugins directory
-        for plugin_dir in self.plugins_dir.iterdir():
-            if plugin_dir.is_dir():
-                self.load_plugin_from_dir(plugin_dir)
-    
+
+        # Load from plugins directory (only if it exists)
+        if self.plugins_dir.is_dir():
+            for plugin_dir in self.plugins_dir.iterdir():
+                if plugin_dir.is_dir():
+                    self.load_plugin_from_dir(plugin_dir)
+
     def load_plugin_from_dir(self, plugin_dir: Path):
         """Load a plugin from directory."""
         try:
@@ -128,10 +136,10 @@ class PluginManager:
             plugin_json = plugin_dir / "plugin.json"
             if not plugin_json.exists():
                 return
-            
+
             with open(plugin_json, 'r', encoding='utf-8') as f:
                 spec_data = json.load(f)
-            
+
             plugin_spec = PluginSpec(
                 name=spec_data.get("name", plugin_dir.name),
                 display_name=spec_data.get("display_name", plugin_dir.name),
@@ -144,112 +152,103 @@ class PluginManager:
                 icon=spec_data.get("icon", "🧩"),
                 config=spec_data.get("config", {})
             )
-            
+
             self.plugins[plugin_spec.name] = plugin_spec
-            
+
         except Exception as e:
             print(f"Error loading plugin {plugin_dir.name}: {e}")
-    
+
     def get_plugin_list(self) -> List[PluginSpec]:
         """Get list of all plugins."""
         return list(self.plugins.values())
-    
+
     def get_enabled_plugins(self) -> List[PluginSpec]:
         """Get list of enabled plugins."""
         return [p for p in self.plugins.values() if p.enabled]
-    
+
     def enable_plugin(self, name: str, enabled: bool = True):
         """Enable or disable a plugin."""
         if name in self.plugins:
             self.plugins[name].enabled = enabled
             return True
         return False
-    
+
     def load_plugin(self, name: str) -> Optional[Any]:
         """Load and instantiate a plugin."""
         if name not in self.plugins:
             return None
-        
-        plugin_spec = self.plugins[name]
-        
+
         if name in self.loaded_plugins:
             return self.loaded_plugins[name]
-        
+
+        plugin_spec = self.plugins[name]
+        instance = None
         try:
-            # Try to import the plugin
-            if plugin_spec.module:
-                # Dynamic import
-                module_path = self.plugins_dir / name / plugin_spec.module
-                if module_path.exists():
-                    spec = importlib.util.spec_from_file_location(
-                        f"{name}.plugin",
-                        str(module_path)
-                    )
-                    if spec and spec.loader:
-                        module = importlib.util.module_from_spec(spec)
-                        sys.modules[f"{name}.plugin"] = module
-                        spec.loader.exec_module(module)
-                        
-                        # Get the plugin class
-                        if plugin_spec.class_name and hasattr(module, plugin_spec.class_name):
-                            plugin_class = getattr(module, plugin_spec.class_name)
-                            plugin_instance = plugin_class(**plugin_spec.config)
-                            self.loaded_plugins[name] = plugin_instance
-                            return plugin_instance
-            
-            # Built-in plugins
-            if name == "code_completer":
-                from .plugins.code_completer import CodeCompleterPlugin
-                self.loaded_plugins[name] = CodeCompleterPlugin(**plugin_spec.config)
-                return self.loaded_plugins[name]
-            
-            if name == "vscode_integration":
-                from .plugins.vscode_integration import VSCodeIntegrationPlugin
-                self.loaded_plugins[name] = VSCodeIntegrationPlugin(**plugin_spec.config)
-                return self.loaded_plugins[name]
-            
-            if name == "web_search":
-                from .plugins.web_search import WebSearchPlugin
-                self.loaded_plugins[name] = WebSearchPlugin(**plugin_spec.config)
-                return self.loaded_plugins[name]
-            
-            if name == "math_solver":
-                from .plugins.math_solver import MathSolverPlugin
-                self.loaded_plugins[name] = MathSolverPlugin(**plugin_spec.config)
-                return self.loaded_plugins[name]
-            
-            if name == "translator":
-                from .plugins.translator import TranslatorPlugin
-                self.loaded_plugins[name] = TranslatorPlugin(**plugin_spec.config)
-                return self.loaded_plugins[name]
-            
+            instance = self._load_external_plugin(name, plugin_spec)
+            if instance is None:
+                instance = self._load_builtin_plugin(name, plugin_spec)
         except Exception as e:
             print(f"Error loading plugin {name}: {e}")
             traceback.print_exc()
-        
+
+        if instance is not None:
+            self.loaded_plugins[name] = instance
+        return instance
+
+    def _load_external_plugin(self, name: str, plugin_spec: PluginSpec) -> Optional[Any]:
+        """Load a plugin from a file declared in its plugin.json."""
+        if not plugin_spec.module:
+            return None
+
+        module_path = self.plugins_dir / name / plugin_spec.module
+        if not module_path.exists():
+            return None
+
+        spec = importlib.util.spec_from_file_location(f"{name}.plugin", str(module_path))
+        if not spec or not spec.loader:
+            return None
+
+        module = importlib.util.module_from_spec(spec)
+        sys.modules[f"{name}.plugin"] = module
+        spec.loader.exec_module(module)
+
+        if plugin_spec.class_name and hasattr(module, plugin_spec.class_name):
+            plugin_class = getattr(module, plugin_spec.class_name)
+            return plugin_class(**plugin_spec.config)
         return None
-    
+
+    def _load_builtin_plugin(self, name: str, plugin_spec: PluginSpec) -> Optional[Any]:
+        """Instantiate one of the bundled plugins."""
+        target = self.BUILTIN_PLUGIN_CLASSES.get(name)
+        if not target:
+            return None
+
+        module_name, class_name = target.split(":")
+        module = importlib.import_module(f".plugins.{module_name}", package=__package__)
+        plugin_class = getattr(module, class_name)
+        return plugin_class(**plugin_spec.config)
+
     def unload_plugin(self, name: str):
         """Unload a plugin."""
         if name in self.loaded_plugins:
             del self.loaded_plugins[name]
-    
+
     def apply_plugins(self, text: str, context: Dict[str, Any] = None) -> str:
         """
         Apply all enabled plugins to text.
-        
+
         Args:
             text: Input text
             context: Additional context for plugins
-        
+
         Returns:
             Processed text
         """
         if context is None:
             context = {}
-        
+
         result = text
-        
+
         for plugin_spec in self.get_enabled_plugins():
             plugin = self.load_plugin(plugin_spec.name)
             if plugin and hasattr(plugin, 'process'):
@@ -257,22 +256,22 @@ class PluginManager:
                     result = plugin.process(result, context)
                 except Exception as e:
                     print(f"Error in plugin {plugin_spec.name}: {e}")
-        
+
         return result
-    
+
     def pre_generate(self, prompt: str, context: Dict[str, Any]) -> str:
         """
         Apply pre-generation plugins.
-        
+
         Args:
             prompt: User prompt
             context: Generation context
-        
+
         Returns:
             Modified prompt
         """
         result = prompt
-        
+
         for plugin_spec in self.get_enabled_plugins():
             plugin = self.load_plugin(plugin_spec.name)
             if plugin and hasattr(plugin, 'pre_generate'):
@@ -280,22 +279,22 @@ class PluginManager:
                     result = plugin.pre_generate(result, context)
                 except Exception as e:
                     print(f"Error in plugin {plugin_spec.name} pre_generate: {e}")
-        
+
         return result
-    
+
     def post_generate(self, response: str, context: Dict[str, Any]) -> str:
         """
         Apply post-generation plugins.
-        
+
         Args:
             response: AI response
             context: Generation context
-        
+
         Returns:
             Modified response
         """
         result = response
-        
+
         for plugin_spec in self.get_enabled_plugins():
             plugin = self.load_plugin(plugin_spec.name)
             if plugin and hasattr(plugin, 'post_generate'):
@@ -303,47 +302,19 @@ class PluginManager:
                     result = plugin.post_generate(result, context)
                 except Exception as e:
                     print(f"Error in plugin {plugin_spec.name} post_generate: {e}")
-        
+
         return result
-    
+
     def get_plugin_actions(self, plugin_name: str) -> List[Dict[str, Any]]:
         """Get available actions for a plugin."""
         plugin = self.load_plugin(plugin_name)
         if plugin and hasattr(plugin, 'get_actions'):
             return plugin.get_actions()
         return []
-    
+
     def execute_plugin_action(self, plugin_name: str, action: str, **kwargs) -> Any:
         """Execute a plugin action."""
         plugin = self.load_plugin(plugin_name)
         if plugin and hasattr(plugin, 'execute_action'):
             return plugin.execute_action(action, **kwargs)
-        return None
-
-
-# Base plugin class
-class BasePlugin:
-    """Base class for plugins."""
-    
-    def __init__(self, **config):
-        self.config = config
-    
-    def process(self, text: str, context: Dict[str, Any]) -> str:
-        """Process text (main plugin method)."""
-        return text
-    
-    def pre_generate(self, prompt: str, context: Dict[str, Any]) -> str:
-        """Modify prompt before generation."""
-        return prompt
-    
-    def post_generate(self, response: str, context: Dict[str, Any]) -> str:
-        """Modify response after generation."""
-        return response
-    
-    def get_actions(self) -> List[Dict[str, Any]]:
-        """Get list of available actions."""
-        return []
-    
-    def execute_action(self, action: str, **kwargs) -> Any:
-        """Execute a plugin action."""
         return None

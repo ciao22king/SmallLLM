@@ -12,14 +12,14 @@ from .cli import CLI
 from .api import app, run_api
 
 __all__ = [
-    "Tokenizer", 
-    "SmallLLM", 
-    "ModelConfig", 
-    "CLI", 
-    "app", 
+    "Tokenizer",
+    "SmallLLM",
+    "ModelConfig",
+    "CLI",
+    "app",
     "run_api",
     "get_config_by_name",
     "TINY_CONFIG",
-    "SMALL_CONFIG", 
+    "SMALL_CONFIG",
     "MEDIUM_CONFIG"
 ]
